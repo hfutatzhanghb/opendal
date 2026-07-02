@@ -192,4 +192,47 @@ impl HdfsCore {
 
         Ok(())
     }
+
+    pub fn hdfs_copy(&self, from: &str, to: &str) -> Result<Metadata> {
+        let from_path = build_rooted_abs_path(&self.root, from);
+        // Verify the source exists and is a file.
+        let from_meta = self.client.metadata(&from_path).map_err(new_std_io_error)?;
+        if !from_meta.is_file() {
+            return Err(
+                Error::new(ErrorKind::IsADirectory, "from path should be a file")
+                    .with_context("input", from),
+            );
+        }
+
+        let to_path = build_rooted_abs_path(&self.root, to);
+
+        // Ensure the parent directory of the destination exists. hdfsCopy
+        // requires the parent to already exist.
+        let parent = std::path::PathBuf::from(&to_path)
+            .parent()
+            .ok_or_else(|| {
+                Error::new(
+                    ErrorKind::Unexpected,
+                    "path should have parent but not, it must be malformed",
+                )
+                .with_context("input", &to_path)
+            })?
+            .to_path_buf();
+
+        self.client
+            .create_dir(&parent.to_string_lossy())
+            .map_err(new_std_io_error)?;
+
+        self.client
+            .copy_file(&from_path, &to_path)
+            .map_err(new_std_io_error)?;
+
+        // Return the metadata of the freshly created destination.
+        let to_meta = self.client.metadata(&to_path).map_err(new_std_io_error)?;
+
+        let mut md = Metadata::new(EntryMode::FILE);
+        md.set_content_length(to_meta.len());
+        md.set_last_modified(Timestamp::try_from(to_meta.modified())?);
+        Ok(md)
+    }
 }

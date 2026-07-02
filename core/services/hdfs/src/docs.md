@@ -10,7 +10,7 @@ This service can be used to:
 - [x] write
 - [x] delete
 - [x] list
-- [ ] copy
+- [x] copy
 - [x] rename
 - [ ] ~~presign~~
 

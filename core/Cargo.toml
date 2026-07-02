@@ -334,3 +334,9 @@ sha2 = { workspace = true }
 size = "0.5"
 tokio = { workspace = true, features = ["fs", "macros", "rt-multi-thread"] }
 uuid = { workspace = true, features = ["serde", "v4"] }
+
+
+[patch.crates-io]
+# Fork with hdfsCopy (hdfsCopy function support).
+# Switch to crates.io version once published.
+hdrs = { git = "ssh://git@git.kanzhun-inc.com/dap/hdrs.git", branch = "main" }
